@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Employee Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+    <div class="container mt-4">
+
+        <!-- Top Row -->
+        <div class="d-flex justify-content-between align-items-center">
+
+            <h4 class="mb-0">{{ name }}</h4>
+
+            <div>
+                <a href="/admin" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Admin Dashboard
+                </a>
+
+                <a href="/download/{{ name }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-download"></i> Download
+                </a>
+
+                <a href="/logout" class="btn btn-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Gap before table -->
+        <div class="mt-4"></div>
+
+        <!-- Report Table -->
+        <table class="table table-bordered mt-3 shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Project</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.date }}</td>
+                    <td>{{ r.projectName }}</td>
+                    <td>
+                        {% for i in range(1,11) %}
+                        {% if i <= r.rating|int %} <i class="bi bi-star-fill text-warning"></i>
+                            {% else %}
+                            <i class="bi bi-star-fill text-secondary"></i>
+                            {% endif %}
+                            {% endfor %}
+                            {{ r.rating }}/10
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+
+</html>
