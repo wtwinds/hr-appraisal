@@ -1,0 +1,21 @@
+Normal Light Mode body {
+    background-color: #f8f9fa;
+}
+
+/* Dark Mode - Blue Theme */
+body.dark-mode {
+    background: linear-gradient(135deg, #5f94f8, #5f94f8);
+    color: white;
+}
+
+/* Keep cards white */
+body.dark-mode .card {
+    background-color: white;
+    color: black;
+}
+
+/* Keep table normal */
+body.dark-mode table {
+    background-color: white;
+    color: black;
+}

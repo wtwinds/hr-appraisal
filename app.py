@@ -5,6 +5,10 @@ from datetime import datetime
 from reportlab.pdfgen import canvas
 import io
 import urllib.parse
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 
 app = Flask(__name__)
 app.secret_key = "hr_secret_key"
@@ -15,6 +19,7 @@ db = client[app.config["DB_NAME"]]
 
 users = db.users
 ratings = db.ratings
+projects=db.projects
 
 
 # ---------------- LOGIN ----------------
@@ -70,12 +75,64 @@ def admin():
         flash("Rating Submitted Successfully!")
 
     employees = users.find({"role": "employee"})
+    project_list=projects.find()
     today = datetime.now().strftime("%Y-%m-%d")
 
     return render_template("admin_dashboard.html",
                            employees=employees,
+                           projects=project_list,
                            today=today)
 
+# ---------------- ADD DATA PAGE ----------------
+@app.route("/add-data")
+def add_data():
+    if session.get("role") != "admin":
+        return redirect("/")
+    return render_template("add_data.html")
+
+# ---------------- ADD EMPLOYEE ----------------
+@app.route("/add-employee", methods=["POST"])
+def add_employee():
+    if session.get("role") != "admin":
+        return redirect("/")
+
+    name = request.form["name"]
+    loginId = request.form["loginId"]
+    password = request.form["password"]
+
+    if not users.find_one({"loginId": loginId}):
+        users.insert_one({
+            "name": name,
+            "loginId": loginId,
+            "password": password,
+            "role": "employee"
+        })
+        flash("Employee Added Successfully!")
+
+    return redirect("/admin")
+
+# ---------------- ADD PROJECT ----------------
+@app.route("/add-project", methods=["POST"])
+def add_project():
+    if session.get("role") != "admin":
+        return redirect("/")
+
+    projectName = request.form["projectName"]
+
+    if not projects.find_one({"projectName": projectName}):
+        projects.insert_one({
+            "projectName": projectName
+        })
+        flash("Project Added Successfully!")
+
+    return redirect("/admin")
+
+# ---------------- CAPSTONE PAGE ----------------
+@app.route("/capstone")
+def capstone():
+    if session.get("role") != "admin":
+        return redirect("/")
+    return render_template("capstone.html")
 
 # ---------------- VIEW REPORTS ----------------
 @app.route("/reports")
@@ -112,32 +169,83 @@ def employee_dashboard():
 @app.route("/download/<path:name>")
 def download(name):
     name = urllib.parse.unquote(name)
-    records = ratings.find({"employeeName": name})
+    records = list(ratings.find({"employeeName": name}))
 
     buffer = io.BytesIO()
-    p = canvas.Canvas(buffer)
-    y = 800
 
-    p.drawString(200, y, f"HR Appraisal Report - {name}")
-    y -= 40
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    elements = []
+
+    styles = getSampleStyleSheet()
+
+    title = Paragraph(f"<b>HR Appraisal Report - {name}</b>", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1,20))
+
+    # Table Header
+    data = [["Date", "Project", "Rating", "Comment"]]
 
     for r in records:
-        p.drawString(100, y, f"Date: {r['date']}")
-        y -= 20
-        p.drawString(100, y, f"Project: {r['projectName']}")
-        y -= 20
-        p.drawString(100, y, f"Rating: {r['rating']}/10")
-        y -= 20
-        p.drawString(100, y, f"Comment: {r.get('comment','')}")
-        y -= 40
+        data.append([
+            r.get("date",""),
+            r.get("projectName",""),
+            f"{r.get('rating','')}/10",
+            r.get("comment","")
+        ])
 
-    p.save()
+    table = Table(data, colWidths=[100,120,80,260])
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.grey),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.whitesmoke),
+
+        ("GRID",(0,0),(-1,-1),1,colors.black),
+
+        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+
+        ("ALIGN",(2,1),(2,-1),"CENTER"),
+    ]))
+
+    elements.append(table)
+
+    doc.build(elements)
+
     buffer.seek(0)
 
     return send_file(buffer,
                      as_attachment=True,
                      download_name="report.pdf",
-                     mimetype='application/pdf')
+                     mimetype="application/pdf")
+# @app.route("/download/<path:name>")
+# def download(name):
+#     name = urllib.parse.unquote(name)
+#     records = ratings.find({"employeeName": name})
+
+#     buffer = io.BytesIO()
+#     p = canvas.Canvas(buffer)
+#     y = 800
+
+#     p.drawString(200, y, f"HR Appraisal Report - {name}")
+#     y -= 40
+
+#     for r in records:
+#         p.drawString(100, y, f"Date: {r['date']}")
+#         y -= 20
+#         p.drawString(100, y, f"Project: {r['projectName']}")
+#         y -= 20
+#         p.drawString(100, y, f"Rating: {r['rating']}/10")
+#         y -= 20
+#         p.drawString(100, y, f"Comment: {r.get('comment','')}")
+#         y -= 40
+
+#     p.save()
+#     buffer.seek(0)
+
+#     return send_file(buffer,
+#                      as_attachment=True,
+#                      download_name="report.pdf",
+#                      mimetype='application/pdf')
 
 
 @app.route("/logout")

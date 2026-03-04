@@ -5,18 +5,31 @@
     <title>Employee Report</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 
-<body class="bg-light">
+<body class="bg-light" id="body">
 
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">Employee Panel</span>
+
+            <div class="ms-auto">
+                <a href="/admin" class="btn btn-light btn-sm me-2">Admin Dashboard</a>
+                <button onclick="toggleTheme()" class="btn btn-warning btn-sm me-2">🌙</button>
+                <a href="/download/{{ name }}" class="btn btn-primary btn-sm me-2">Download</a>
+                <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+            </div>
+        </div>
+    </nav>
     <div class="container mt-4">
 
-        <!-- Top Row -->
+
         <div class="d-flex justify-content-between align-items-center">
 
             <h4 class="mb-0">{{ name }}</h4>
 
-            <div>
+            <!-- <div>
                 <a href="/admin" class="btn btn-outline-secondary me-2">
                     <i class="bi bi-arrow-left"></i> Admin Dashboard
                 </a>
@@ -28,14 +41,14 @@
                 <a href="/logout" class="btn btn-danger">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
-            </div>
+            </div> -->
 
         </div>
 
-        <!-- Gap before table -->
+
         <div class="mt-4"></div>
 
-        <!-- Report Table -->
+
         <table class="table table-bordered mt-3 shadow-sm">
             <thead class="table-light">
                 <tr>
@@ -66,7 +79,11 @@
         </table>
 
     </div>
-
+    <script>
+        function toggleTheme() {
+            document.getElementById("body").classList.toggle("dark-mode");
+        }
+    </script>
 </body>
 
 </html>
