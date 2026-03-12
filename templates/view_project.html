@@ -42,8 +42,8 @@
                 <tr>
 
                     <td>{{ r.product }}</td>
-                    <td>{{ r.apm }}</td>
-                    <td>{{ r.developer }}</td>
+                    <td>{{ r.apm | join(', ') }}</td>
+                    <td>{{ r.developer | join(', ') }}</td>
                     <td>{{ r.timeline }}</td>
                     <td>{{ r.task }}</td>
 

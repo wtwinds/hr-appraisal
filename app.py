@@ -1,6 +1,6 @@
 import io
 import os
-from flask import Flask, render_template, request, redirect, session, flash, send_file
+from flask import Flask, render_template, request, redirect, session, flash, send_file, send_from_directory
 from pymongo import MongoClient
 from config import Config
 from datetime import datetime
@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.secret_key = "hr_secret_key"
 app.config.from_object(Config)
 
-UPLOAD_FOLDER = "static/uploads"
+UPLOAD_FOLDER = os.path.join("static", "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
@@ -113,13 +113,15 @@ def add_employee():
     name = request.form["name"]
     loginId = request.form["loginId"]
     password = request.form["password"]
+    position=request.form["position"]
 
     if not users.find_one({"loginId": loginId}):
         users.insert_one({
             "name": name,
             "loginId": loginId,
             "password": password,
-            "role": "employee"
+            "role": "employee",
+            "position": position
         })
         flash("Employee Added Successfully!")
 
@@ -151,8 +153,8 @@ def assign_project():
     if request.method == "POST":
 
         product = request.form["product"]
-        apm = request.form["apm"]
-        developer = request.form["developer"]
+        apm = request.form.getlist("apm")
+        developer = request.form.getlist("developer")
         timeline = request.form["timeline"]
         task = request.form["task"]
 
@@ -169,8 +171,8 @@ def assign_project():
 
     products = list(projects.find())
 
-    apms = users.find({"role":"apm"})
-    developers = users.find({"role":"employee"})
+    apms = users.find({"position":"apm"})
+    developers = users.find({"position":"developer"})
 
     return render_template(
         "assign_project.html",
@@ -198,16 +200,17 @@ def capstone():
 @app.route("/project-timeline")
 def project_timeline():
 
-    if session.get("role") not in ["employee", "apm"]:
+    if session.get("role") != "employee":
         return redirect("/")
 
     name = session["user"]
 
-    if session.get("role") == "employee":
-        records = db.assignments.find({"developer": name})
-
-    else:
-        records = db.assignments.find({"apm": name})
+    records = db.assignments.find({
+        "$or": [
+            {"developer": {"$in": [name]}},
+            {"apm": {"$in": [name]}}
+        ]
+    })
 
     return render_template(
         "view_project.html",
@@ -241,10 +244,9 @@ def view_capstone(name):
 @app.route("/capstone-download/<filename>")
 def capstone_download(filename):
 
-    path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
-    return send_file(
-        path,
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename,
         as_attachment=True
     )
 
@@ -255,11 +257,9 @@ def capstone_view(filename):
     if session.get("role") != "admin":
         return redirect("/")
 
-    path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
-    return send_file(
-        path,
-        mimetype="application/pdf"
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
     )
 
 # ---------------- EMPLOYEE REPORT ----------------
